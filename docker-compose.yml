@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  # Business Logic Layer: Django ASGI / Daphne
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../Dockerfile.backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=loanpulse-prod-secret-key-2026
+      - USE_ORACLE=False # Switch to True when Oracle container is configured
+      - ORACLE_SERVICE_NAME=ORCLCDB
+      - ORACLE_USER=loanpulse
+      - ORACLE_PASSWORD=loanpulse123
+      - ORACLE_HOST=oracle-db
+      - ORACLE_PORT=1521
+    volumes:
+      - ./backend:/app
+      - backend-media:/app/media
+    restart: unless-stopped
+
+  # Presentation Layer: React 19 Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../Dockerfile.frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  backend-media:

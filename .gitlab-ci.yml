@@ -1,0 +1,70 @@
+# GitLab CI/CD Pipeline Configuration for LoanPulse
+stages:
+  - lint
+  - test
+  - build
+  - security
+  - deploy
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  NODE_ENV: "production"
+
+cache:
+  paths:
+    - .cache/pip
+    - frontend/node_modules/
+
+# 1. Lint Stage
+lint:code_style:
+  stage: lint
+  image: python:3.11-slim
+  script:
+    - pip install flake8
+    - cd backend && flake8 core loans documents risk --count --max-line-length=120 --statistics || true
+
+# 2. Test Stage
+test:backend_pytest:
+  stage: test
+  image: python:3.11-slim
+  before_script:
+    - cd backend
+    - python -m venv venv
+    - . venv/bin/activate
+    - pip install -r requirements.txt
+  script:
+    - pytest --maxfail=2 -v
+
+# 3. Build Stage
+build:frontend_react:
+  stage: build
+  image: node:20-alpine
+  before_script:
+    - cd frontend
+    - npm ci || npm install
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - frontend/dist/
+    expire_in: 1 week
+
+# 4. Security Stage
+security:bandit_scan:
+  stage: security
+  image: python:3.11-slim
+  script:
+    - pip install bandit
+    - cd backend && bandit -r core loans documents risk -ll || true
+
+# 5. Deploy Stage
+deploy:production:
+  stage: deploy
+  image: docker:24.0
+  services:
+    - docker:24.0-dind
+  only:
+    - main
+  script:
+    - docker-compose build
+    - docker-compose up -d

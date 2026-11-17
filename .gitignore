@@ -1,0 +1,22 @@
+# Python & Virtualenv
+venv/
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.pytest_cache/
+*.log
+
+# Node & Frontend
+node_modules/
+dist/
+.vite/
+.env.local
+
+# Databases & Media
+db.sqlite3
+media/
+backend/media/
+*.bak
+*.swp
+.DS_Store
